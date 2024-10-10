@@ -1,7 +1,6 @@
-import { type ParsedTree } from "@/lib/command/parse";
-import { globalStyle as graphStyle } from "@/lib/graph/layout";
 import { toPointer } from "@/lib/idgen";
 import { getPath, ParseOptions, Tree } from "@/lib/parser";
+import { type ParsedTree } from "@/lib/worker/command/parse";
 import { getEditorState } from "@/stores/editorStore";
 import { getStatusState } from "@/stores/statusStore";
 import { getTreeState } from "@/stores/treeStore";
@@ -104,7 +103,7 @@ export class EditorWrapper {
     return this.version;
   }
 
-  setTree({ treeObject, graph, tableHTML }: ParsedTree, resetCursor: boolean = true) {
+  setTree({ treeObject }: ParsedTree, resetCursor: boolean = true) {
     // increase version to skip next onChange event which triggered by setText
     const tree = Tree.fromObject(treeObject);
     tree.version = this.incVersion();
@@ -112,11 +111,6 @@ export class EditorWrapper {
 
     this.tree = tree;
     getTreeState().setTree(tree, this.kind);
-
-    if (this.kind === "main") {
-      getTreeState().setGraph(graph);
-      getTreeState().setTableHTML(tableHTML);
-    }
 
     // 全量替换成新文本
     this.editor.executeEdits(null, [
@@ -148,9 +142,7 @@ export class EditorWrapper {
     const options = {
       ...getStatusState().parseOptions,
       ...extraParseOptions,
-      needTable: this.isMain(),
-      needGraph: this.isMain(),
-      graphStyle,
+      kind: this.kind,
     };
 
     reportTextSize(text.length);

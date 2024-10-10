@@ -1,7 +1,6 @@
-import { parseAndFormat } from "@/lib/command/parse";
-import { globalStyle } from "@/lib/graph/layout";
 import { splitParentPointer } from "@/lib/idgen";
 import { getRawValue, ParseOptions, Tree } from "@/lib/parser";
+import { parseAndFormat } from "@/lib/worker/command/parse";
 import { readFileIfNeed } from "./utils";
 
 interface TestData {
@@ -15,9 +14,7 @@ interface TestData {
 async function doExpect(options: Partial<ParseOptions>, text: string, ...aa: TestData[]) {
   const { treeObject } = await parseAndFormat(text, 1, {
     ...options,
-    needGraph: false,
-    needTable: false,
-    graphStyle: globalStyle,
+    kind: "main",
   });
   const tree = Tree.fromObject(treeObject);
 

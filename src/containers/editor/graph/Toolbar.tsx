@@ -1,8 +1,7 @@
-import { ReactNode, useState } from "react";
+import { memo, ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { type EdgeWithData, type NodeWithData } from "@/lib/graph/layout";
 import { join as idJoin, splitParentPointer, toPath } from "@/lib/idgen";
-import { type Node } from "@/lib/parser/node";
 import { useEditor } from "@/stores/editorStore";
 import { useStatusStore } from "@/stores/statusStore";
 import { NodeToolbar, Position, useReactFlow } from "@xyflow/react";
@@ -13,27 +12,28 @@ import { useNodeClick } from "./useNodeClick";
 import { separateMap, toggleHidden } from "./utils";
 
 interface ToolbarProps {
-  node: Node;
-  visible?: boolean;
+  id: string;
 }
 
-export default function Toolbar({ node, visible }: ToolbarProps) {
+const Toolbar = memo(({ id }: ToolbarProps) => {
   const [fold, setFold] = useState(true);
   const [foldSiblings, setFoldSiblings] = useState(true);
 
   const t = useTranslations();
   const editor = useEditor();
+  // TODO: fix by use full nodes and edges
   const { getNodes, getEdges, setNodes, setEdges } = useReactFlow<NodeWithData, EdgeWithData>();
   const nodes = getNodes();
   const edges = getEdges();
   const args = { nodes, edges, setNodes, setEdges };
 
-  const id = node.id;
   const { callNodeClick } = useNodeClick(args);
   const { callHandleClick } = useHandleClick(args);
   const { parent: parentId } = splitParentPointer(id);
+  const isRoot = parentId === undefined;
   const setRevealId = useStatusStore((state) => state.setRevealId);
 
+  // TODO: change to hide siblings and their descendants
   const triggerFoldSiblings = () => {
     const isSiblingDescendant = (id: string) => {
       const { parent } = splitParentPointer(id);
@@ -61,29 +61,35 @@ export default function Toolbar({ node, visible }: ToolbarProps) {
     setFoldSiblings(!foldSiblings);
   };
 
+  // TODO: hide fold button when there is no edges
   // TODO: fix w-fit doesn't work
   return (
     <NodeToolbar
+      isVisible={true}
       className="flex items-center justify-center w-[96px] h-fit bg-input"
-      isVisible={visible}
       position={Position.Top}
       align="start"
       offset={0}
     >
-      <ToolbarButton
-        title={t("go to parent")}
-        onClick={() => {
-          if (parentId) {
-            setRevealId(parentId);
-            callNodeClick(parentId);
-          }
-        }}
-      >
-        <ArrowLeft className="icon" />
-      </ToolbarButton>
-      <ToolbarButton title={t(foldSiblings ? "fold sibings" : "unfold sibings")} onClick={triggerFoldSiblings}>
-        {foldSiblings ? <CopyMinus className="icon" /> : <CopyPlus className="icon" />}
-      </ToolbarButton>
+      {!isRoot && (
+        <ToolbarButton
+          title={t("go to parent")}
+          onClick={() => {
+            if (parentId) {
+              setRevealId(parentId);
+              callNodeClick(parentId);
+            }
+          }}
+        >
+          <ArrowLeft className="icon" />
+        </ToolbarButton>
+      )}
+      {!isRoot && (
+        // TODO: fix typo
+        <ToolbarButton title={t(foldSiblings ? "fold sibings" : "unfold sibings")} onClick={triggerFoldSiblings}>
+          {foldSiblings ? <CopyMinus className="icon" /> : <CopyPlus className="icon" />}
+        </ToolbarButton>
+      )}
       <ToolbarButton
         title={t(fold ? "fold node" : "unfold node")}
         onClick={() => {
@@ -103,7 +109,8 @@ export default function Toolbar({ node, visible }: ToolbarProps) {
       </ToolbarButton>
     </NodeToolbar>
   );
-}
+});
+Toolbar.displayName = "Toolbar";
 
 interface ToolbarButtonProps {
   title: string;
@@ -111,7 +118,7 @@ interface ToolbarButtonProps {
   children: ReactNode;
 }
 
-function ToolbarButton({ title, onClick, children }: ToolbarButtonProps) {
+const ToolbarButton = memo(({ title, onClick, children }: ToolbarButtonProps) => {
   return (
     <Button
       variant="icon"
@@ -126,4 +133,7 @@ function ToolbarButton({ title, onClick, children }: ToolbarButtonProps) {
       {children}
     </Button>
   );
-}
+});
+ToolbarButton.displayName = "ToolbarButton";
+
+export default Toolbar;

@@ -1,57 +1,10 @@
-import { format as textFormat } from "@/lib/format";
-import { type Graph, type GraphNodeStyle, Layouter, genFlowNodes } from "@/lib/graph/layout";
-import { parseJSON, type ParseOptions, type StringifyOptions, type TreeObject } from "@/lib/parser";
-import { genDomString } from "@/lib/table";
+import { parseJSON, type ParseOptions } from "@/lib/parser";
 import * as jsonc from "jsonc-parser";
-import { isEmpty } from "lodash-es";
+import { textFormat } from "./text";
 
 const fallbackThreshold = 100000;
 
-export interface ParseAndFormatOptions extends StringifyOptions {
-  needTable: boolean;
-  needGraph: boolean;
-  graphStyle: GraphNodeStyle;
-}
-
-export interface ParsedTree {
-  treeObject: TreeObject;
-  graph?: Graph;
-  tableHTML?: string;
-}
-
-export async function parseAndFormat(
-  text: string,
-  version: number,
-  options?: ParseAndFormatOptions,
-): Promise<ParsedTree> {
-  const tree = parseJSON(text, options);
-  tree.version = version;
-
-  if (!tree.valid()) {
-    if (options?.format) {
-      tree.text = format(text, options);
-    }
-    return { treeObject: tree.toObject() };
-  }
-
-  if (options?.format) {
-    tree.stringify(options);
-  } else if (!isEmpty(tree.nestNodeMap)) {
-    tree.stringifyNestNodes();
-  }
-
-  let graph = undefined;
-  if (options?.needGraph) {
-    const { nodes, edges } = genFlowNodes(tree);
-    const { ordered, levelMeta } = new Layouter(options.graphStyle, tree, nodes).layout();
-    graph = { nodes: ordered, edges, levelMeta };
-  }
-
-  const tableHTML = options?.needTable ? genDomString(tree) : undefined;
-  return { treeObject: tree.toObject(), tableHTML, graph };
-}
-
-export function format(text: string, options?: ParseOptions): string {
+export function prettyFormat(text: string, options?: ParseOptions): string {
   if (text.length > fallbackThreshold) {
     return textFormat(text, options);
   }

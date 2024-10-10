@@ -1,10 +1,8 @@
-import type { Kind } from "@/lib/editor/editor";
-import type { Graph } from "@/lib/graph/layout";
+import { type Kind } from "@/lib/editor/editor";
 import { Tree } from "@/lib/parser";
-import type { KeyWithType } from "@/lib/table";
+import { type KeyWithType } from "@/lib/table";
 import { type FunctionKeys } from "@/lib/utils";
 import { create } from "zustand";
-import { useShallow } from "zustand/react/shallow";
 
 export const sides = ["top", "bottom", "left", "right"];
 export type Side = (typeof sides)[number];
@@ -28,22 +26,16 @@ interface TooltipContent {
 export interface TreeState {
   main: Tree;
   secondary: Tree;
-  graph: Graph;
-  tableHTML: string;
   tooltipContent?: TooltipContent;
 
   setTree: (tree: Tree, kind: Kind) => void;
-  setTableHTML: (tableHTML?: string) => void;
   setTooltip: (content: TooltipContent) => void;
   hideTooltip: () => void;
-  setGraph: (graph?: Graph) => void;
 }
 
 const initialStates: Omit<TreeState, FunctionKeys<TreeState>> = {
   main: new Tree(),
   secondary: new Tree(),
-  graph: { nodes: [], edges: [] },
-  tableHTML: "",
 };
 
 export const useTreeStore = create<TreeState>()((set, get) => ({
@@ -53,20 +45,12 @@ export const useTreeStore = create<TreeState>()((set, get) => ({
     set({ [kind]: tree });
   },
 
-  setTableHTML(tableHTML?: string) {
-    set({ tableHTML: tableHTML ?? initialStates.tableHTML });
-  },
-
   setTooltip(content: TooltipContent) {
     set({ tooltipContent: content });
   },
 
   hideTooltip() {
     set({ tooltipContent: initialStates.tooltipContent });
-  },
-
-  setGraph(graph?: Graph) {
-    set({ graph: graph ?? initialStates.graph });
   },
 }));
 
@@ -76,16 +60,6 @@ export function useTree(kind: Kind = "main") {
 
 export function useTreeVersion() {
   return useTreeStore((state) => state.main.version ?? 0);
-}
-
-export function useGraph() {
-  return useTreeStore(
-    useShallow((state) => ({
-      nodes: state.graph.nodes,
-      edges: state.graph.edges,
-      levelMeta: state.graph.levelMeta,
-    })),
-  );
 }
 
 export function getTreeState() {
