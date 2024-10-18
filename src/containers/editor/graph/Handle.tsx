@@ -15,10 +15,12 @@ TargetHandle.displayName = "TargetHandle";
 interface SourceHandleProps {
   id: string;
   indexInParent: number;
+  isChildrenHidden?: boolean;
 }
 
-export const SourceHandle = memo(({ id, indexInParent }: SourceHandleProps) => {
+export const SourceHandle = memo(({ id, indexInParent, isChildrenHidden }: SourceHandleProps) => {
   const top = indexInParent !== undefined ? computeSourceHandleOffset(indexInParent) : undefined;
-  return <Handle type="source" isConnectable id={id} position={Position.Right} style={{ top }} />;
+  const backgroundColor = isChildrenHidden ? "rgb(156 163 175)" : undefined;
+  return <Handle type="source" isConnectable id={id} position={Position.Right} style={{ top, backgroundColor }} />;
 });
 SourceHandle.displayName = "SourceHandle";
